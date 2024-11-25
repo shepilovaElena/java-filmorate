@@ -40,13 +40,13 @@ public class FilmTests {
         Film filmWithViolations = Film.builder()
                 .name("")
                 .description("")
-                .releaseDate(LocalDate.of(1905, 12, 9))
+                .releaseDate(null)
                 .duration(0)
                 .build();
 
         Set<ConstraintViolation<Film>> violations = validator.validate(filmWithViolations);
 
-        Assertions.assertEquals(3, violations.size());
+        Assertions.assertEquals(4, violations.size());
 
         for (ConstraintViolation<Film> violation : violations) {
             String propertyPath = violation.getPropertyPath().toString();
@@ -61,6 +61,9 @@ public class FilmTests {
                     break;
                 case "duration":
                     Assertions.assertEquals("Длительность фильма не может быть меньше минуты.", message);
+                    break;
+                case "releaseDate":
+                    Assertions.assertEquals("Поле не должно быть пустым.", message);
                     break;
             }
         }

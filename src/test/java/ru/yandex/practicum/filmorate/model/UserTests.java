@@ -38,10 +38,10 @@ public class UserTests {
     @Test
     void userWithViolationsTest() {
         User userWithViolations = User.builder()
-                .email("@ya.ru")
+                .email("")
                 .login("")
                 .name("")
-                .birthday(LocalDate.of(2221, 11, 25))
+                .birthday(null)
                 .build();
 
         Set<ConstraintViolation<User>> violations = validator.validate(userWithViolations);
@@ -54,16 +54,56 @@ public class UserTests {
 
             switch (propertyPath) {
                 case "email":
-                    Assertions.assertEquals("email введен некорректно.", message);
+                    Assertions.assertEquals("Поле не должно быть пустым.", message);
                     break;
                 case "login":
                     Assertions.assertEquals("Поле не должно быть пустым.", message);
                     break;
                 case "birthday":
-                    Assertions.assertEquals("Дата рождения не может быть в будущем.", message);
+                    Assertions.assertEquals("Поле не должно быть пустым.", message);
                     break;
             }
         }
+    }
+
+    @Test
+    void userWithIncorrectEmailTest() {
+        User userWithIncorrectEmail = User.builder()
+                .email("@ya.ru")
+                .login("suki")
+                .name("Yana")
+                .birthday(LocalDate.of(2001, 12, 5))
+                .build();
+
+        Set<ConstraintViolation<User>> violations = validator.validate(userWithIncorrectEmail);
+
+        String messageAboutIncorrectEmail = violations.stream()
+                .filter(violation -> violation.getPropertyPath().toString().equals("email"))
+                .map(ConstraintViolation::getMessage)
+                .findFirst()
+                .orElse(null);
+
+        Assertions.assertEquals("email введен некорректно.", messageAboutIncorrectEmail);
+    }
+
+    @Test
+    void userWithIncorrectBirthdayTest() {
+        User userWithIncorrectBirthday = User.builder()
+                .email("br@ya.ru")
+                .login("suki")
+                .name("Yana")
+                .birthday(LocalDate.of(2201, 12, 5))
+                .build();
+
+        Set<ConstraintViolation<User>> violations = validator.validate(userWithIncorrectBirthday);
+
+        String messageAboutIncorrectBirthday = violations.stream()
+                .filter(violation -> violation.getPropertyPath().toString().equals("birthday"))
+                .map(ConstraintViolation::getMessage)
+                .findFirst()
+                .orElse(null);
+
+        Assertions.assertEquals("Дата рождения не может быть в будущем.", messageAboutIncorrectBirthday);
     }
 
 }

@@ -18,12 +18,14 @@ public class FilmController {
     private Map<Integer, Film> films = new HashMap<>();
 
     private int getNextId() {
-        if (counter == 0) {
-            counter = 1;
-        } else {
-            counter = counter + 1;
-        }
+        counter = counter + 1;
         return counter;
+    }
+
+    private void checkFilmReleaseDate(Film film) {
+        if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+            throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года.");
+        }
     }
 
     @GetMapping
@@ -35,9 +37,8 @@ public class FilmController {
     @PostMapping
     public Film postFilm(@Valid @RequestBody Film film) throws ValidationException {
         log.info("Получен запрос на добавление фильма.");
-        if (!(film.getReleaseDate() == null) && film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года.");
-        }
+        checkFilmReleaseDate(film);
+
         int nextId = getNextId();
         film.setId(nextId);
         films.put(nextId,film);
@@ -48,6 +49,7 @@ public class FilmController {
     @PutMapping()
     public Film putFilm(@RequestBody Film film) {
         log.info("Получен запрос на изменение фильма с id {}.", film.getId());
+        checkFilmReleaseDate(film);
         if (films.containsKey(film.getId())) {
             films.put(film.getId(), film);
             return film;
