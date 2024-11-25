@@ -16,6 +16,7 @@ public class User {
     private int id = 0;
     @Email(message = "email введен некорректно.")
     @NotBlank(message = "Поле не должно быть пустым.")
+    @NotNull(message = "Поле не должно быть пустым.")
     private String email;
     @NotBlank(message = "Поле не должно быть пустым.")
     private String login;
