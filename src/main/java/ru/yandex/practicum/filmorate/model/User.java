@@ -4,8 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -14,6 +13,8 @@ import java.util.Set;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
     private long id = 0;
     @Email(message = "email введен некорректно.")
@@ -28,4 +29,5 @@ public class User {
     private LocalDate birthday;
     @Builder.Default
     private Set<Long> friends = new HashSet<>();
+
 }
