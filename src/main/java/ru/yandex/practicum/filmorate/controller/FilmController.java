@@ -19,7 +19,7 @@ import java.util.Optional;
 @RequestMapping("/films")
 @Slf4j
 public class FilmController {
-    FilmService filmService;
+    private FilmService filmService;
 
     @Autowired
     public FilmController(FilmService filmService) {
@@ -48,28 +48,19 @@ public class FilmController {
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable long id, @PathVariable long userId) {
-        if (!checkId(id)) {
-            throw new NotFoundException("Фильм с id" + id + " не найден.");
-        }
-        if (!filmService.getUserStorage().getAllUsers().contains(filmService.getUserStorage().getUserById(userId))) {
-            throw new NotFoundException("Пользователь с id" + userId + " не найден.");
-        }
+        log.info("Получен запрос на добавление лайка фильму с id {} от пользователя с id {}.", id, userId);
         filmService.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void deleteLike(@PathVariable long id, @PathVariable long userId) {
-        if (!checkId(id)) {
-            throw new NotFoundException("Фильм с id" + id + " не найден.");
-        }
-        if (!filmService.getUserStorage().getAllUsers().contains(filmService.getUserStorage().getUserById(userId))) {
-            throw new NotFoundException("Пользователь с id" + userId + " не найден.");
-        }
+        log.info("Получен запрос на удаление лайка у фильма с id {} от пользователя с id {}.", id, userId);
         filmService.deleteLike(id, userId);
     }
 
     @GetMapping("/popular")
     public List<Film> getBestFilms(@RequestParam(defaultValue = "10") String count) {
+        log.info("Получен запрос на получение лучших {} фильмов", count);
         return filmService.getBestFilms(count);
     }
 
@@ -79,15 +70,4 @@ public class FilmController {
         }
     }
 
-    private boolean checkId(long id) {
-        boolean check = true;
-        Optional<Long> userId = filmService.getAllFilms().stream()
-                .map(Film::getId)
-                .filter(i -> i == id)
-                .findFirst();
-        if (userId.isEmpty()) {
-            check = false;
-        }
-        return check;
-    }
 }

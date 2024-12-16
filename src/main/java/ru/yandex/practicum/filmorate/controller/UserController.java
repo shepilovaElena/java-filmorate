@@ -17,7 +17,7 @@ import java.util.Optional;
 @RequestMapping("/users")
 @Slf4j
 public class UserController {
-    UserService userService;
+    private UserService userService;
 
     @Autowired
     public UserController(UserService userService) {
@@ -46,42 +46,25 @@ public class UserController {
 
     @PutMapping("/{id}/friends/{friendId}")
     public void addToFriends(@PathVariable long id, @PathVariable long friendId) {
-        if (!checkId(id)) {
-            throw new NotFoundException("Пользователь с id" + id + " не найден.");
-        }
-        if (!checkId(friendId)) {
-            throw new NotFoundException("Пользователь с id" + friendId + " не найден.");
-        }
+        log.info("Получен запрос от пользователя с id {} на добавление в друзья к пользователю с id {}.", friendId, id);
         userService.addToFriends(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public void  deleteFromFriends(@PathVariable long id, @PathVariable long friendId) {
-        if (!checkId(id)) {
-            throw new NotFoundException("Пользователь с id" + id + " не найден.");
-        }
-        if (!checkId(friendId)) {
-            throw new NotFoundException("Пользователь с id" + friendId + " не найден.");
-        }
+        log.info("Получен запрос от пользователя с id {} на удаление из друзей пользователя с id {}.", friendId, id);
         userService.deleteFromFriends(id, friendId);
     }
 
     @GetMapping("/{id}/friends")
     public List<User> getUserFriendsList(@PathVariable long id) {
-        if (!checkId(id)) {
-            throw new NotFoundException("Пользователь с id" + id + " не найден.");
-        }
+        log.info("Получен запрос на получение списка всех друзей пользователя с id {}.", id);
         return userService.getUserFriendsList(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
     public List<User> getJointFriends(@PathVariable long id, @PathVariable long otherId) {
-        if (!checkId(id)) {
-            throw new NotFoundException("Пользователь с id" + id + " не найден.");
-        }
-        if (!checkId(otherId)) {
-            throw new NotFoundException("Пользователь с id" + otherId + " не найден.");
-        }
+        log.info("Получен запрос на получение списка общих друзей пользователей с id {} и id {}.", id, otherId);
         return userService.getJointFriends(id, otherId);
     }
 
@@ -95,15 +78,4 @@ public class UserController {
         }
     }
 
-    private boolean checkId(long id) {
-        boolean check = true;
-        Optional<Long> userId = userService.getAllUsers().stream()
-                .map(user -> user.getId())
-                .filter(i -> i == id)
-                .findFirst();
-        if (userId.isEmpty()) {
-            check = false;
-        }
-        return check;
-    }
 }
