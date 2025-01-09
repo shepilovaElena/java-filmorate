@@ -1,77 +1,100 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.sql.PreparedStatement;
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 @Service
 public class UserService {
-    private UserStorage inMemoryUserStorage;
+    private final UserStorage userDbStorage;
+    private final JdbcTemplate jdbcTemplate;
+
 
     @Autowired
-    public UserService(UserStorage inMemoryUserStorage) {
-        this.inMemoryUserStorage = inMemoryUserStorage;
+    public UserService(UserStorage dbUserStorage, JdbcTemplate jdbcTemplate) {
+        this.userDbStorage = dbUserStorage;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public UserStorage getUserStorage() {
-        return inMemoryUserStorage;
+    public User postUser(UserDto userDto) {
+
+        return userDbStorage.postUser(UserMapper.toModel(userDto));
     }
 
-    public Collection<User> getAllUsers() {
-        return inMemoryUserStorage.getAllUsers();
+    public User putUser(UserDto userDto) {
+
+        return userDbStorage.putUser(UserMapper.toModel(userDto));
     }
 
-    public User postUser(User user) {
-        return inMemoryUserStorage.postUser(user);
+    public Collection<UserDto> getAllUsers() {
+        return userDbStorage.getAllUsers().stream()
+                .map(UserMapper::toDto)
+                .toList();
     }
 
-    public User putUser(User user) {
-        return inMemoryUserStorage.putUser(user);
+    public String addToFriends(int userSubmitted, int userReceived) { /// не работает
+        checkUserId(userSubmitted);
+        checkUserId(userReceived);
+
+        String sqlQuery = "INSERT INTO friendship (user_submitted_request_id, user_received_request_id) VALUES (?, ?)";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        jdbcTemplate.update(connection -> {
+            PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"friendship_id"});
+            stmt.setInt(1, userSubmitted);
+            stmt.setInt(2, userReceived);
+            return stmt;
+        }, keyHolder);
+
+        return "friendshipId = " + keyHolder.getKey().intValue();
     }
 
-    public void addToFriends(long userId, long userFriendId) {
-        checkUserId(userId);
-        checkUserId(userFriendId);
-        inMemoryUserStorage.getUserById(userId).getFriends().add(userFriendId);
-        inMemoryUserStorage.getUserById(userFriendId).getFriends().add(userId);
-    }
-
-    public void deleteFromFriends(long userId, long userFriendId) {
+    public void deleteFromFriends(int userId, int userfriendId) {
        checkUserId(userId);
-       checkUserId(userFriendId);
+       checkUserId(userfriendId);
 
-       inMemoryUserStorage.getUserById(userId).getFriends().remove(userFriendId);
-       inMemoryUserStorage.getUserById(userFriendId).getFriends().remove(userId);
+        String sqlQuery = "DELETE FROM friendship (user_submitted_request_id, user_received_request_id) WHERE ";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        jdbcTemplate.update(con -> {
+            PreparedStatement stmt = con.prepareStatement(sqlQuery, new String[]{"user_id"});
+            stmt.setInt(1, userfriendId);
+            stmt.setInt(2, userId);
+            return stmt;
+        }, keyHolder);
 
     }
 
-    public List<User> getJointFriends(long user1Id, long user2Id) {
+    public List<User> getJointFriends(int user1Id, int user2Id) {
         checkUserId(user1Id);
         checkUserId(user2Id);
-
-        User user1 = inMemoryUserStorage.getUserById(user1Id);
-        User user2 = inMemoryUserStorage.getUserById(user2Id);
-        return user1.getFriends().stream()
-                .filter(id -> user2.getFriends().contains(id))
-                .map(id -> inMemoryUserStorage.getUserById(id))
-                .collect(Collectors.toList());
+        return null;
     }
 
-    public List<User> getUserFriendsList(long id) {
+    public List<User> getUserFriendsList(int id) {
         checkUserId(id);
-        return inMemoryUserStorage.getUserById(id).getFriends().stream()
-                .map(friendId -> inMemoryUserStorage.getUserById(friendId))
-                .collect(Collectors.toList());
+        return null;
     }
 
-    private void checkUserId(long id) {
-        if (inMemoryUserStorage.getUserById(id) == null) {
-            throw new NotFoundException("Пользователь с id" + id + " не найден.");
-        }
+    private void checkUserId(int id) {
+        String sqlQuery = "SELECT user_id FROM users";
+        Optional<Integer> userIdOptional = jdbcTemplate.queryForList(sqlQuery, Integer.class).stream()
+                .filter(userId -> id == userId)
+                .findFirst();
+      if(userIdOptional.isEmpty()) {
+          throw new NotFoundException("Пользователь с id" + id + " не найден.");
+      }
     }
 }

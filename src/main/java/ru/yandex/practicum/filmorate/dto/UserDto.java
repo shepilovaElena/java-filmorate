@@ -1,19 +1,17 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.practicum.filmorate.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.Instant;
 
-
 @Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class User {
+public class UserDto {
     private int id;
     @Email(message = "email введен некорректно.")
     @NotBlank(message = "Поле не должно быть пустым.")

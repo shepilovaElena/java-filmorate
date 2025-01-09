@@ -30,7 +30,7 @@ public class InMemoryFilmStorage implements FilmStorage {
         return film;
     }
 
-    public Film getFilmById(long id) {
+    public Film getFilmById(int id) {
         return films.get(id);
     }
 

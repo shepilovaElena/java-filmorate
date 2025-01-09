@@ -31,6 +31,7 @@ public class Film {
     private LocalDate releaseDate;
     @Min(value = 1, message = "Длительность фильма не может быть меньше минуты.")
     private int duration;
+    private int rating_id;
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
 }
