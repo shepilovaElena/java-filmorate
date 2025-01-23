@@ -110,8 +110,10 @@ public class UserService {
     }
 
     private void checkUserId(int id) {
+
         String sqlQuery = "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = ?)";
-      if(jdbcTemplate.queryForObject(sqlQuery, Integer.class, id) == 0) {
+
+      if (jdbcTemplate.queryForObject(sqlQuery, Integer.class, id) == 0) {
           throw new NotFoundException("Пользователь с id " + id + " не найден.");
       }
     }

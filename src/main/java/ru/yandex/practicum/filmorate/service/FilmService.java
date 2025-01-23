@@ -18,7 +18,7 @@ public class FilmService {
     private final FilmRepository filmRepository;
     private final NamedParameterJdbcOperations jdbcOperations;
 
-    public FilmService (FilmRepository filmRepository, NamedParameterJdbcOperations jdbcOperations) {
+    public FilmService(FilmRepository filmRepository, NamedParameterJdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
         this.filmRepository = filmRepository;
     }
@@ -104,7 +104,7 @@ public class FilmService {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("id", id);
     try {
-        if (jdbcOperations.queryForObject(query, parameterSource, Integer.class) == 0 ) {
+        if (jdbcOperations.queryForObject(query, parameterSource, Integer.class) == 0) {
             throw new NotFoundException("Пользователь с id " + id + " не найден.");
         }
     } catch (DataAccessException e) {

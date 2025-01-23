@@ -149,7 +149,8 @@ public class FilmDbRepository implements FilmRepository {
         if (!filmGenresId.isEmpty()) {
             for (int i : filmGenresId) {
             filmGenres.add(Genre.builder().id(i).build());
-        }}
+        }
+        }
 
         film.setGenres(filmGenres);
       return film;

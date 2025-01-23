@@ -50,8 +50,8 @@ public class JdbcUserRepositoryTest {
     @Test
     public void  testPostUser() {
 
-        Optional<User> userOptional = Optional.ofNullable(userDbRepository.postUser(User.builder().login("urt").
-                email("jim@mail.com").name("Anton").birthday(LocalDate.of(1987, 4,7)).build()));
+        Optional<User> userOptional = Optional.ofNullable(userDbRepository.postUser(User.builder().login("urt")
+                        .email("jim@mail.com").name("Anton").birthday(LocalDate.of(1987, 4,7)).build()));
 
 
         assertThat(userOptional)
@@ -62,8 +62,8 @@ public class JdbcUserRepositoryTest {
 
     @Test
     public void testPutUser() {
-        Optional<User> userOptional = Optional.ofNullable(userDbRepository.putUser(User.builder().id(2).login("urt").
-                email("jim@mail.com").name("Marina").birthday(LocalDate.of(1987, 4,7)).build()));
+        Optional<User> userOptional = Optional.ofNullable(userDbRepository.putUser(User.builder().id(2).login("urt")
+                        .email("jim@mail.com").name("Marina").birthday(LocalDate.of(1987, 4,7)).build()));
 
         assertThat(userOptional)
                 .isPresent()
