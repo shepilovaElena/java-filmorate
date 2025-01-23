@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.user;
+package ru.yandex.practicum.filmorate.repository.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
+import java.time.ZoneId;
 import java.time.temporal.ChronoField;
 import java.util.Collection;
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.List;
 @Primary
 @Repository
 @RequiredArgsConstructor
-public class UserDbStorage implements UserStorage{
+public class UserDbRepository implements UserRepository {
 
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper userRowMapper;
@@ -27,8 +28,8 @@ public class UserDbStorage implements UserStorage{
     @Override
     public Collection<User> getAllUsers() {
         String sqlQuery = "SELECT user_id, login, email, name, birthday FROM users";
-         List<User> userList = jdbcTemplate.query(sqlQuery, userRowMapper);
-         return userList;
+        List<User> userList = jdbcTemplate.query(sqlQuery, userRowMapper);
+        return userList;
     }
 
     @Override
@@ -40,7 +41,8 @@ public class UserDbStorage implements UserStorage{
             stmt.setString(1, user.getLogin());
             stmt.setString(2, user.getEmail());
             stmt.setString(3, user.getName());
-            stmt.setTimestamp(4, new Timestamp(user.getBirthday().getLong(ChronoField.INSTANT_SECONDS)));
+            stmt.setTimestamp(4, new Timestamp(user.getBirthday().atStartOfDay()
+                    .atZone(ZoneId.systemDefault()).toInstant().getLong(ChronoField.INSTANT_SECONDS)));
             return stmt;
         }, keyHolder);
 
@@ -56,7 +58,8 @@ public class UserDbStorage implements UserStorage{
             stmt.setString(1, user.getLogin());
             stmt.setString(2, user.getEmail());
             stmt.setString(3, user.getName());
-            stmt.setTimestamp(4, new Timestamp(user.getBirthday().getLong(ChronoField.INSTANT_SECONDS)));
+            stmt.setTimestamp(4, new Timestamp(user.getBirthday().atStartOfDay()
+                    .atZone(ZoneId.systemDefault()).toInstant().getLong(ChronoField.INSTANT_SECONDS)));
             stmt.setInt(5, user.getId());
             return stmt;
         });
@@ -66,8 +69,7 @@ public class UserDbStorage implements UserStorage{
 
     @Override
     public User getUserById(int id) {
-        String sqlQuery = "SELECT user_id, login, email, name, birthday FROM users WHERE id = ?";
+        String sqlQuery = "SELECT user_id, login, email, name, birthday FROM users WHERE user_id = ?";
         return jdbcTemplate.queryForObject(sqlQuery, userRowMapper, id);
     }
-
 }

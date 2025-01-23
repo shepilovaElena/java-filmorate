@@ -4,9 +4,12 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.time.LocalDate;
 
 
 @Data
@@ -24,5 +27,5 @@ public class User {
     private String name;
     @Past(message = "Дата рождения не может быть в будущем.")
     @NotNull(message = "Поле не должно быть пустым.")
-    private Instant birthday;
+    private LocalDate birthday;
 }

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Past;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.Instant;
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -22,5 +22,5 @@ public class UserDto {
     private String name;
     @Past(message = "Дата рождения не может быть в будущем.")
     @NotNull(message = "Поле не должно быть пустым.")
-    private Instant birthday;
+    private LocalDate birthday;
 }

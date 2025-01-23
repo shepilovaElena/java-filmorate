@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS  Genre(
+CREATE TABLE IF NOT EXISTS  genres(
 genre_id integer AUTO_INCREMENT PRIMARY KEY,
 genre_name varchar NOT NULL
 );
@@ -22,7 +22,7 @@ name varchar NOT NULL,
 description varchar(200) NOT NULL,
 release_date timestamp NOT NULL,
 duration integer,
-film_rating_id integer REFERENCES rating(rating_id)
+rating_id integer REFERENCES rating(rating_id)
 );
 
 CREATE TABLE IF NOT EXISTS likes(
@@ -31,15 +31,15 @@ film_id integer REFERENCES films(film_id) NOT NULL,
 user_id integer REFERENCES users(user_id) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS  film_genre(
+CREATE TABLE IF NOT EXISTS  film_genres_list(
 film_genre_id integer AUTO_INCREMENT PRIMARY KEY,
-genre_id integer REFERENCES genre(genre_id) NOT NULL,
+genre_id integer REFERENCES genres(genre_id) NOT NULL,
 film_id integer REFERENCES films(film_id) NOT NULL
 );
 
 
 CREATE TABLE  IF NOT EXISTS friendship(
 friendship_id INTEGER AUTO_INCREMENT PRIMARY KEY,
-user_submitted_request_id integer REFERENCES users(user_id),
-user_received_request_id integer REFERENCES users(user_id)
+user_id integer REFERENCES users(user_id),
+user_friend_id integer REFERENCES users(user_id)
 );

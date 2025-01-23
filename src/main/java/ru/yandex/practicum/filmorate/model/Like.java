@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class Like {
-    private int like_id;
-    private int user_id;
-    private int film_id;
+    private int likeId;
+    private int userId;
+    private int filmId;
 }
