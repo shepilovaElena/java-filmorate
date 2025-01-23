@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.repository.film;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -11,6 +12,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.repository.genre.GenreRowMapper;
 
 import java.sql.Timestamp;
 import java.time.ZoneId;
@@ -28,25 +30,36 @@ public class FilmDbRepository implements FilmRepository {
     @Override
     public Collection<Film> getAllFilms() {
 
-        String query1 = "SELECT film_id, name, description, release_date, duration, rating_id FROM films";
+        String query1 = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.rating_id, r.rating_name" +
+                " FROM films AS f INNER JOIN rating AS r ON f.rating_id = r.rating_id";
 
-        List<Film> filmsList = jdbcOperations.query(query1,filmRowMapper);
+            List<Film> filmsList = jdbcOperations.query(query1,filmRowMapper);
 
-        String query2 = "SELECT genre_id, film_id FROM film_genres_list";
+
+        String query2 = "SELECT DISTINCT fl.film_id, fl.genre_id, g.genre_name FROM film_genres_list AS fl INNER JOIN genres AS g " +
+                                "ON fl.genre_id = g.genre_id ";
 
         Map<Integer, List<Genre>> resultMap = new HashMap<>();
 
-        jdbcOperations.query(query2, rs -> {
-            int genreId = rs.getInt("genre_id");
-            int filmId = rs.getInt("film_id");
-            resultMap.computeIfAbsent(filmId, k -> new ArrayList<>()).add(Genre.builder().id(genreId).build());
-        });
+        try {
+            jdbcOperations.query(query2, rs -> {
+                int genreId = rs.getInt("fl.genre_id");
+                int filmId = rs.getInt("fl.film_id");
+                String genreName = rs.getString("g.genre_name");
+                resultMap.computeIfAbsent(filmId, k -> new ArrayList<>()).add(Genre.builder().id(genreId).name(genreName).build());
+            });
+        } catch (DataAccessException e) {
+            e.getCause().printStackTrace();
+        }
+
+
 
         for (Film film : filmsList) {
             film.setGenres(resultMap.get(film.getId()));
         }
 
         return filmsList;
+
     }
 
     @Override
@@ -60,8 +73,7 @@ public class FilmDbRepository implements FilmRepository {
         MapSqlParameterSource parameterSource = new MapSqlParameterSource();
         parameterSource.addValue("name", film.getName());
         parameterSource.addValue("description", film.getDescription());
-        parameterSource.addValue("releaseDate", new Timestamp(film.getReleaseDate().atStartOfDay()
-                .atZone(ZoneId.systemDefault()).toInstant().getLong(ChronoField.INSTANT_SECONDS)));
+        parameterSource.addValue("releaseDate", Timestamp.valueOf(film.getReleaseDate().atStartOfDay()));
         parameterSource.addValue("duration", film.getDuration());
         parameterSource.addValue("ratingId", film.getMpa().getId());
 
@@ -135,24 +147,19 @@ public class FilmDbRepository implements FilmRepository {
     @Override
     public Film getFilmById(int id) {
 
-        String sqlQuery1 = "SELECT film_id, name, description, release_date, duration, rating_id,  FROM films WHERE film_id = :id";
+        String sqlQuery1 = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.rating_id, r.rating_name" +
+                " FROM films AS f INNER JOIN rating AS r ON f.rating_id = r.rating_id WHERE film_id = :id";
         MapSqlParameterSource param = new MapSqlParameterSource();
         param.addValue("id", id);
         Film film = jdbcOperations.queryForObject(sqlQuery1, param, filmRowMapper);
 
-        String sqlQuery2 = "SELECT genre_id FROM film_genres_list WHERE film_id = :id";
+        String sqlQuery2 = "SELECT DISTINCT fl.genre_id, g.genre_name FROM film_genres_list AS fl INNER JOIN genres AS g " +
+                "ON fl.genre_id = g.genre_id WHERE film_id = :id";
 
-        List<Integer> filmGenresId = jdbcOperations.queryForList(sqlQuery2, param, Integer.class);
-
-        List<Genre> filmGenres = new ArrayList<>();
-
-        if (!filmGenresId.isEmpty()) {
-            for (int i : filmGenresId) {
-            filmGenres.add(Genre.builder().id(i).build());
-        }
-        }
+        List<Genre> filmGenres = jdbcOperations.query(sqlQuery2, param, new GenreRowMapper());
 
         film.setGenres(filmGenres);
+
       return film;
     }
 

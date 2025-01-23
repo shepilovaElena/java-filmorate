@@ -20,7 +20,7 @@ public class FilmRowMapper implements RowMapper<Film> {
                 .description(rs.getString(3))
                 .releaseDate(rs.getTimestamp(4).toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
                 .duration(rs.getInt(5))
-                .mpa(Mpa.builder().id(rs.getInt(6)).build())
+                .mpa(Mpa.builder().id(rs.getInt(6)).name(rs.getString(7)).build())
                 .build();
     }
 }
