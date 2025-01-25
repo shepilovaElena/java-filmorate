@@ -6,7 +6,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public class GenreDbRepository implements GenreRepository {
         try {
             return jdbcOperations.queryForObject(getGenreQuery, param, genreRowMapper);
         } catch (DataAccessException e) {
-            throw new NotFoundException("Жанр с id " + id + " не существует.");
+            throw new ValidationException("Жанр с id " + id + " не существует.");
         }
     }
 
