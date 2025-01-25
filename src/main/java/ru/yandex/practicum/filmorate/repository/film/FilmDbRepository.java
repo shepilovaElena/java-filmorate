@@ -8,6 +8,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.InternalException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -33,8 +35,7 @@ public class FilmDbRepository implements FilmRepository {
         String query1 = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.rating_id, r.rating_name" +
                 " FROM films AS f INNER JOIN rating AS r ON f.rating_id = r.rating_id";
 
-            List<Film> filmsList = jdbcOperations.query(query1,filmRowMapper);
-
+        List<Film> filmsList = jdbcOperations.query(query1,filmRowMapper);
 
         String query2 = "SELECT DISTINCT fl.film_id, fl.genre_id, g.genre_name FROM film_genres_list AS fl INNER JOIN genres AS g " +
                                 "ON fl.genre_id = g.genre_id ";
@@ -49,9 +50,8 @@ public class FilmDbRepository implements FilmRepository {
                 resultMap.computeIfAbsent(filmId, k -> new ArrayList<>()).add(Genre.builder().id(genreId).name(genreName).build());
             });
         } catch (DataAccessException e) {
-            e.getCause().printStackTrace();
+            new InternalException("Сбой в выполнении запроса на получение жанров всех фильмов");
         }
-
 
 
         for (Film film : filmsList) {
@@ -105,6 +105,7 @@ public class FilmDbRepository implements FilmRepository {
     public Film putFilm(Film film) {
         checkMpa(film.getMpa());
         checkGenre(film.getGenres());
+        checkId("films", "film_id", film.getId());
 
         String updateQuery = "UPDATE films SET name = :name, description = :description, release_date = :releaseDate, " +
                 "duration = :duration, rating_id = :mpaId WHERE film_id = :id";
@@ -126,7 +127,6 @@ public class FilmDbRepository implements FilmRepository {
 
         String addGenresQuery = "INSERT INTO film_genres_list (film_id, genre_id) VALUES (:filmId, :genreId)";
 
- /// выделить в отдельный метод
         List<Map<String, Object>> genreBatchValues = new ArrayList<>();
 
         List<Genre> genres = film.getGenres();
@@ -153,6 +153,8 @@ public class FilmDbRepository implements FilmRepository {
         param.addValue("id", id);
         Film film = jdbcOperations.queryForObject(sqlQuery1, param, filmRowMapper);
 
+
+
         String sqlQuery2 = "SELECT DISTINCT fl.genre_id, g.genre_name FROM film_genres_list AS fl INNER JOIN genres AS g " +
                 "ON fl.genre_id = g.genre_id WHERE film_id = :id";
 
@@ -160,9 +162,93 @@ public class FilmDbRepository implements FilmRepository {
 
         film.setGenres(filmGenres);
 
-      return film;
+        return film;
+
     }
 
+    public void addLike(int filmId, int userId) {
+        String addLikeQuery = "INSERT INTO likes (film_id, user_id) VALUES (:filmId, :userId)";
+        checkId("films", "film_id", filmId);
+        checkId("users", "user_id", userId);
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        MapSqlParameterSource param = new MapSqlParameterSource();
+        param.addValue("filmId", filmId);
+        param.addValue("userId", userId);
+
+        jdbcOperations.update(addLikeQuery, param, keyHolder, new String[] {"like_id"});
+    }
+
+    @Override
+    public void deleteLike(int filmId, int userId) {
+        checkId("films", "film_id", filmId);
+        checkId("users", "user_id", userId);
+        checkLike(filmId, userId);
+
+        String deleteQuery = "DELETE FROM likes WHERE film_id = :filmId AND user_id = :userId";
+
+        MapSqlParameterSource param = new MapSqlParameterSource();
+        param.addValue("filmId", filmId);
+        param.addValue("userId", userId);
+
+        jdbcOperations.update(deleteQuery, param);
+    }
+
+    public List<Film> getBestFilms(String count) {
+
+        int countInt;
+        try {
+            countInt = Integer.parseInt(count);
+        } catch (Exception e) {
+            throw  new ValidationException("Передано не число, а " + count);
+        }
+        if (countInt <= 0) {
+            throw new ValidationException("Количество фильмов должно быть больше нуля");
+        }
+
+        String countQuery = "SELECT COUNT(film_id) AS amount_likes, film_id FROM likes " +
+                "GROUP BY film_id ORDER BY amount_likes DESC";
+
+        Map<Integer, Integer> resultMap = new LinkedHashMap<>();
+
+        jdbcOperations.query(countQuery, rs -> {
+            int amountLikes = rs.getInt("amount_likes");
+            int filmId = rs.getInt("film_id");
+            resultMap.put(filmId, amountLikes);
+        });
+
+        return resultMap.keySet().stream()
+                .map(film_id -> getFilmById(film_id))
+                .limit(Long.parseLong(count))
+                .toList();
+    }
+
+    private void checkId(String tableName, String columnName, int id) {
+        String query = String.format("SELECT EXISTS(SELECT 1 FROM %s WHERE %s = :id)", tableName, columnName);
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        parameterSource.addValue("id", id);
+        try {
+            if (jdbcOperations.queryForObject(query, parameterSource, Integer.class) == 0) {
+                throw new NotFoundException("Пользователь с id " + id + " не найден.");
+            }
+        } catch (DataAccessException e) {
+            e.getCause().printStackTrace();
+        }
+
+    }
+
+    private void checkLike(int filmId, int userId) {
+        String checkLikeQuery = String.format("SELECT EXISTS (SELECT 1 FROM likes) WHERE %s = :filmId AND %s = :userId",
+                filmId, userId);
+        MapSqlParameterSource param = new MapSqlParameterSource();
+        param.addValue("filmId", filmId);
+        param.addValue("userId", userId);
+
+        if (jdbcOperations.queryForObject(checkLikeQuery, param, Integer.class) == 0) {
+            throw new NotFoundException("Лайк от пользователя с id " + userId + " фильму с id " + filmId + " не найден.");
+        }
+    }
 
     private void checkMpa(Mpa mpa) {
         String checkMpaQuery = "SELECT EXISTS (SELECT 1 FROM rating WHERE rating_id = :id)";

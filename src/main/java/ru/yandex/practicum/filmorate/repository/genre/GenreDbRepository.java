@@ -2,9 +2,11 @@ package ru.yandex.practicum.filmorate.repository.genre;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.List;
@@ -19,12 +21,17 @@ public class GenreDbRepository implements GenreRepository {
 
     @Override
     public Genre getGenreById(int id) {
-        String getGenreQuery = "SELECT genre_id, genre_name FROM genres WHERE genre_id = :id";
+
+        String getGenreQuery = "SELECT genre_id, genre_name AS cnt FROM genres WHERE genre_id = :id";
 
         MapSqlParameterSource param = new MapSqlParameterSource();
         param.addValue("id", id);
 
-        return jdbcOperations.queryForObject(getGenreQuery, param, genreRowMapper);
+        try {
+            return jdbcOperations.queryForObject(getGenreQuery, param, genreRowMapper);
+        } catch (DataAccessException e) {
+            throw new NotFoundException("Жанр с id " + id + " не существует.");
+        }
     }
 
     @Override
@@ -32,6 +39,5 @@ public class GenreDbRepository implements GenreRepository {
         String getAllGenresQuery = "SELECT genre_id, genre_name  FROM genres";
         return jdbcOperations.query(getAllGenresQuery, genreRowMapper);
     }
-
 
 }

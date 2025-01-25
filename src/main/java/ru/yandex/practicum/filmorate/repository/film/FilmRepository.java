@@ -4,6 +4,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface FilmRepository {
     Collection<Film> getAllFilms();
@@ -14,5 +15,10 @@ public interface FilmRepository {
 
     Film getFilmById(int id);
 
-   // void deleteFilmById(int id);
+    void addLike(int filmId, int userId);
+
+    void deleteLike(int filmId, int userId);
+
+    List<Film> getBestFilms(String count);
+
 }
