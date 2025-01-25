@@ -29,7 +29,7 @@ public class JdbcUserRepositoryTest {
             .birthday(LocalDate.of(1990,12,5)).build();
     User postTestUser = User.builder().id(2).login("urt").email("jim@mail.com").name("Anton")
             .birthday(LocalDate.of(1987, 4,7)).build();
-    User putTestUser = User.builder().id(2).login("urt").email("jim@mail.com").name("Marina")
+    User putTestUser = User.builder().id(1).login("urt").email("jim@mail.com").name("Marina")
             .birthday(LocalDate.of(1987, 4,7)).build();
 
 
@@ -53,7 +53,6 @@ public class JdbcUserRepositoryTest {
         Optional<User> userOptional = Optional.ofNullable(userDbRepository.postUser(User.builder().login("urt")
                         .email("jim@mail.com").name("Anton").birthday(LocalDate.of(1987, 4,7)).build()));
 
-
         assertThat(userOptional)
                 .isPresent()
                 .usingRecursiveComparison()
@@ -62,7 +61,7 @@ public class JdbcUserRepositoryTest {
 
     @Test
     public void testPutUser() {
-        Optional<User> userOptional = Optional.ofNullable(userDbRepository.putUser(User.builder().id(2).login("urt")
+        Optional<User> userOptional = Optional.ofNullable(userDbRepository.putUser(User.builder().id(1).login("urt")
                         .email("jim@mail.com").name("Marina").birthday(LocalDate.of(1987, 4,7)).build()));
 
         assertThat(userOptional)
