@@ -8,7 +8,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.InternalException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -33,26 +32,21 @@ public class FilmDbRepository implements FilmRepository {
     public Collection<Film> getAllFilms() {
 
         String query1 = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.rating_id, r.rating_name" +
-                " FROM films AS f INNER JOIN rating AS r ON f.rating_id = r.rating_id";
+                " FROM films AS f INNER JOIN rating AS r ON f.rating_id = r.rating_id GROUP BY f.film_id";
 
         List<Film> filmsList = jdbcOperations.query(query1,filmRowMapper);
 
-        String query2 = "SELECT DISTINCT fl.film_id, fl.genre_id, g.genre_name FROM film_genres_list AS fl INNER JOIN genres AS g " +
-                                "ON fl.genre_id = g.genre_id ";
+        String query2 = "SELECT DISTINCT f.film_id, f.genre_id, g.genre_name FROM film_genres_list AS f INNER JOIN genres AS g ON f.genre_id = g.genre_id ";
 
-        Map<Integer, List<Genre>> resultMap = new HashMap<>();
+        Map<Integer, List<Genre>> resultMap = new LinkedHashMap<>();
 
-        try {
+
             jdbcOperations.query(query2, rs -> {
-                int genreId = rs.getInt("fl.genre_id");
-                int filmId = rs.getInt("fl.film_id");
-                String genreName = rs.getString("g.genre_name");
+                int genreId = rs.getInt("genre_id");
+                int filmId = rs.getInt("film_id");
+                String genreName = rs.getString("genre_name");
                 resultMap.computeIfAbsent(filmId, k -> new ArrayList<>()).add(Genre.builder().id(genreId).name(genreName).build());
             });
-        } catch (DataAccessException e) {
-            new InternalException("Сбой в выполнении запроса на получение жанров всех фильмов");
-        }
-
 
         for (Film film : filmsList) {
             film.setGenres(resultMap.get(film.getId()));
@@ -140,20 +134,20 @@ public class FilmDbRepository implements FilmRepository {
 
         jdbcOperations.batchUpdate(addGenresQuery, genreBatchValues.toArray(new Map[0]));
 
-
         return film;
     }
 
     @Override
     public Film getFilmById(int id) {
 
+        //checkId("films", "film_id", id);
+
         String sqlQuery1 = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.rating_id, r.rating_name" +
                 " FROM films AS f INNER JOIN rating AS r ON f.rating_id = r.rating_id WHERE film_id = :id";
         MapSqlParameterSource param = new MapSqlParameterSource();
         param.addValue("id", id);
+
         Film film = jdbcOperations.queryForObject(sqlQuery1, param, filmRowMapper);
-
-
 
         String sqlQuery2 = "SELECT DISTINCT fl.genre_id, g.genre_name FROM film_genres_list AS fl INNER JOIN genres AS g " +
                 "ON fl.genre_id = g.genre_id WHERE film_id = :id";
