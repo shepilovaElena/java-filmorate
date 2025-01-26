@@ -250,7 +250,7 @@ public class FilmDbRepository implements FilmRepository {
         param.addValue("id", mpa.getId());
 
         if (jdbcOperations.queryForObject(checkMpaQuery, param, Integer.class) == 0) {
-            throw new ValidationException("Рейтинга с id " + mpa.getId() + " не существует.");
+            throw new NotFoundException("Рейтинга с id " + mpa.getId() + " не существует.");
         }
     }
 
@@ -260,7 +260,7 @@ public class FilmDbRepository implements FilmRepository {
 
         for (Genre genre : genresList) {
             if (!genresIdList.contains(genre.getId())) {
-                throw new ValidationException("Жанра с id " + genre.getId() + " не существует.");
+                throw new NotFoundException("Жанра с id " + genre.getId() + " не существует.");
             }
         }
     }
