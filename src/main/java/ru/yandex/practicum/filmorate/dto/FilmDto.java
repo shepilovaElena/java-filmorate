@@ -1,5 +1,6 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.practicum.filmorate.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,19 +9,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Film.
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Film {
+public class FilmDto {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private int id;
     @NotBlank(message = "Поле не должно быть пустым.")
     private String name;
@@ -35,3 +36,4 @@ public class Film {
     @Builder.Default
     private List<Genre> genres = new ArrayList<>();
 }
+

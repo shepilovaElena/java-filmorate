@@ -1,12 +1,13 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -16,13 +17,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/films")
 @Slf4j
+@RequiredArgsConstructor
 public class FilmController {
-    private FilmService filmService;
-
-    @Autowired
-    public FilmController(FilmService filmService) {
-        this.filmService = filmService;
-    }
+    private final FilmService filmService;
 
     @GetMapping
     public Collection<Film> getAllFilms() {
@@ -44,16 +41,22 @@ public class FilmController {
         return filmService.putFilm(film);
     }
 
-    @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable long id, @PathVariable long userId) {
-        log.info("Получен запрос на добавление лайка фильму с id {} от пользователя с id {}.", id, userId);
-        filmService.addLike(id, userId);
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable int id) {
+        log.info("Получен запрос на получение фильма с id {}.", id);
+        return filmService.getFilmById(id);
     }
 
-    @DeleteMapping("/{id}/like/{userId}")
-    public void deleteLike(@PathVariable long id, @PathVariable long userId) {
-        log.info("Получен запрос на удаление лайка у фильма с id {} от пользователя с id {}.", id, userId);
-        filmService.deleteLike(id, userId);
+    @PutMapping("/{filmId}/like/{userId}")
+    public void addLike(@PathVariable int filmId, @PathVariable int userId) {
+        log.info("Получен запрос на добавление лайка фильму с id {} от пользователя с id {}.", filmId, userId);
+        filmService.addLike(filmId, userId);
+    }
+
+    @DeleteMapping("/{filmId}/like/{userId}")
+    public void deleteLike(@PathVariable int filmId, @PathVariable int userId) {
+        log.info("Получен запрос на удаление лайка у фильма с id {} от пользователя с id {}.", filmId, userId);
+        filmService.deleteLike(filmId, userId);
     }
 
     @GetMapping("/popular")
@@ -62,10 +65,15 @@ public class FilmController {
         return filmService.getBestFilms(count);
     }
 
-    private void checkFilmReleaseDate(Film film) {
-        if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года.");
+    private void checkFilmReleaseDate(Film filmDto) {
+        try {
+            if (filmDto.getReleaseDate() != null && filmDto.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+                throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года.");
+            }
+        } catch (DataAccessException e) {
+            e.getCause().printStackTrace();
         }
+
     }
 
 }
